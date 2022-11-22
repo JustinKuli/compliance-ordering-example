@@ -1,0 +1,49 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: certificate-with-remediation
+  namespace: my-policies
+spec:
+  disabled: false
+  policy-templates:
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: CertificatePolicy
+      metadata:
+        name: expiring-myapp-certificates
+      spec:
+        namespaceSelector:
+          include: ["myapp"]
+        remediationAction: inform
+        severity: low
+        minimumDuration: 6h
+  - extraDependencies:
+    - apiVersion: policy.open-cluster-management.io/v1
+      compliance: NonCompliant
+      kind: CertificatePolicy
+      name: expiring-myapp-certificates
+      namespace: ""
+    ignorePending: true
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: refresh-myapp-certificates
+      spec:
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: tekton.dev/v1beta1
+            kind: PipelineRun
+            metadata:
+              name: refresh-myapp-certificates
+              namespace: myapp
+            spec:
+              pipelineRef:
+                name: refresh-certificates
+              params:
+              - name: namespace
+                value: myapp
+        remediationAction: enforce
+        severity: low
+

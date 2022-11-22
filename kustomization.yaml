@@ -1,0 +1,4 @@
+generators:
+- ./policyGenerator.yaml
+commonLabels:
+  generated-from: github.com_JustinKuli_compliance-ordering-example

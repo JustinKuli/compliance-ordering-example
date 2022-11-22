@@ -1,0 +1,277 @@
+apiVersion: apps.open-cluster-management.io/v1
+kind: PlacementRule
+metadata:
+  labels:
+    generated-from: github.com_JustinKuli_compliance-ordering-example
+  name: placement-moderate-compliance-scan
+  namespace: default
+spec:
+  clusterSelector:
+    matchExpressions: []
+---
+apiVersion: apps.open-cluster-management.io/v1
+kind: PlacementRule
+metadata:
+  labels:
+    generated-from: github.com_JustinKuli_compliance-ordering-example
+  name: placement-upstream-compliance-operator
+  namespace: default
+spec:
+  clusterSelector:
+    matchExpressions: []
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  labels:
+    generated-from: github.com_JustinKuli_compliance-ordering-example
+  name: binding-moderate-compliance-scan
+  namespace: default
+placementRef:
+  apiGroup: apps.open-cluster-management.io
+  kind: PlacementRule
+  name: placement-moderate-compliance-scan
+subjects:
+- apiGroup: policy.open-cluster-management.io
+  kind: Policy
+  name: moderate-compliance-scan
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  labels:
+    generated-from: github.com_JustinKuli_compliance-ordering-example
+  name: binding-upstream-compliance-operator
+  namespace: default
+placementRef:
+  apiGroup: apps.open-cluster-management.io
+  kind: PlacementRule
+  name: placement-upstream-compliance-operator
+subjects:
+- apiGroup: policy.open-cluster-management.io
+  kind: Policy
+  name: upstream-compliance-operator
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  annotations:
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+  labels:
+    generated-from: github.com_JustinKuli_compliance-ordering-example
+  name: moderate-compliance-scan
+  namespace: default
+spec:
+  dependencies:
+  - apiVersion: policy.open-cluster-management.io/v1
+    compliance: Compliant
+    kind: Policy
+    name: upstream-compliance-operator
+    namespace: default
+  disabled: false
+  policy-templates:
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: moderate-compliance-scan
+      spec:
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: compliance.openshift.io/v1alpha1
+            kind: ScanSettingBinding
+            metadata:
+              name: moderate
+              namespace: openshift-compliance
+            profiles:
+            - apiGroup: compliance.openshift.io/v1alpha1
+              kind: Profile
+              name: ocp4-moderate
+            - apiGroup: compliance.openshift.io/v1alpha1
+              kind: Profile
+              name: ocp4-moderate-node
+            settingsRef:
+              apiGroup: compliance.openshift.io/v1alpha1
+              kind: ScanSetting
+              name: default
+        remediationAction: enforce
+        severity: low
+  - extraDependencies:
+    - apiVersion: policy.open-cluster-management.io/v1
+      compliance: Compliant
+      kind: ConfigurationPolicy
+      name: moderate-compliance-scan
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: moderate-compliance-scan2
+      spec:
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: compliance.openshift.io/v1alpha1
+            kind: ComplianceSuite
+            metadata:
+              name: moderate
+              namespace: openshift-compliance
+            status:
+              phase: DONE
+        remediationAction: inform
+        severity: low
+  - extraDependencies:
+    - apiVersion: policy.open-cluster-management.io/v1
+      compliance: Compliant
+      kind: ConfigurationPolicy
+      name: moderate-compliance-scan2
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: moderate-compliance-scan3
+      spec:
+        object-templates:
+        - complianceType: mustnothave
+          objectDefinition:
+            apiVersion: compliance.openshift.io/v1alpha1
+            kind: ComplianceCheckResult
+            metadata:
+              labels:
+                compliance.openshift.io/check-status: FAIL
+                compliance.openshift.io/suite: moderate
+              namespace: openshift-compliance
+        remediationAction: inform
+        severity: low
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  annotations:
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+  labels:
+    generated-from: github.com_JustinKuli_compliance-ordering-example
+  name: upstream-compliance-operator
+  namespace: default
+spec:
+  disabled: false
+  policy-templates:
+  - objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: upstream-compliance-operator
+      spec:
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: CatalogSource
+            metadata:
+              name: compliance-operator
+              namespace: openshift-marketplace
+            spec:
+              displayName: Compliance Operator Upstream
+              image: quay.io/compliance-operator/compliance-operator-index:latest
+              publisher: github.com/openshift/compliance-operator
+              sourceType: grpc
+        remediationAction: enforce
+        severity: low
+  - extraDependencies:
+    - apiVersion: policy.open-cluster-management.io/v1
+      compliance: Compliant
+      kind: ConfigurationPolicy
+      name: upstream-compliance-operator
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: upstream-compliance-operator2
+      spec:
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: v1
+            kind: Namespace
+            metadata:
+              name: openshift-compliance
+        remediationAction: enforce
+        severity: low
+  - extraDependencies:
+    - apiVersion: policy.open-cluster-management.io/v1
+      compliance: Compliant
+      kind: ConfigurationPolicy
+      name: upstream-compliance-operator2
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: upstream-compliance-operator3
+      spec:
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: operators.coreos.com/v1
+            kind: OperatorGroup
+            metadata:
+              name: compliance-operator
+              namespace: openshift-compliance
+            spec:
+              targetNamespaces:
+              - openshift-compliance
+        remediationAction: enforce
+        severity: low
+  - extraDependencies:
+    - apiVersion: policy.open-cluster-management.io/v1
+      compliance: Compliant
+      kind: ConfigurationPolicy
+      name: upstream-compliance-operator3
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: upstream-compliance-operator4
+      spec:
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: Subscription
+            metadata:
+              name: compliance-operator-sub
+              namespace: openshift-compliance
+            spec:
+              channel: alpha
+              name: compliance-operator
+              source: compliance-operator
+              sourceNamespace: openshift-marketplace
+        remediationAction: enforce
+        severity: low
+  - extraDependencies:
+    - apiVersion: policy.open-cluster-management.io/v1
+      compliance: Compliant
+      kind: ConfigurationPolicy
+      name: upstream-compliance-operator4
+    objectDefinition:
+      apiVersion: policy.open-cluster-management.io/v1
+      kind: ConfigurationPolicy
+      metadata:
+        name: upstream-compliance-operator5
+      spec:
+        object-templates:
+        - complianceType: musthave
+          objectDefinition:
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ClusterServiceVersion
+            metadata:
+              namespace: openshift-compliance
+            spec:
+              displayName: Compliance Operator
+            status:
+              phase: Succeeded
+        remediationAction: inform
+        severity: low

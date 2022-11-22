@@ -1,0 +1,27 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: PolicyGenerator
+metadata:
+  name: compliance-ordering-example
+policyDefaults:
+  namespace: default
+  remediationAction: enforce
+  consolidateManifests: false
+  orderManifests: true
+  orderPolicies: true
+policies:
+- name: upstream-compliance-operator
+  manifests:
+  - path: operator-install/catalogsource.compliance-operator.yaml
+  - path: operator-install/namespace.openshift-compliance.yaml
+  - path: operator-install/operatorgroup.compliance-operator.yaml
+  - path: operator-install/subscription.compliance-operator-sub.yaml
+  - path: operator-install/clusterserviceversion.compliance-succeeded.yaml
+    remediationAction: inform
+- name: moderate-compliance-scan
+  manifests:
+  - path: moderate-scan/scansettingbinding.moderate.yaml
+  - path: moderate-scan/compliancesuite.moderate.yaml
+    remediationAction: inform
+  - complianceType: mustnothave
+    path: moderate-scan/compliancecheckresult.fail.yaml
+    remediationAction: inform
